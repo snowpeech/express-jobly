@@ -24,15 +24,7 @@ afterEach(async () => {
 });
 
 describe("partialUpdate()", () => {
-  it("should genxerate a proper partial update query with just 1 field", async function () {
-    // FIXME: write real tests!
-    // expect(false).toEqual(true);
-    let result = await db.query("SELECT * FROM companies");
-    // console.log(result.rows);
-    expect(result.rows).not.toBeUndefined();
-  });
-
-  it("should update the name and number of employees", async () => {
+  it("should generate a proper partial update query for 2 fields", async () => {
     const { query, values } = sqlForPartialUpdate(
       "companies",
       { name: "new name", num_employees: 4 },
@@ -41,9 +33,12 @@ describe("partialUpdate()", () => {
     );
     // let result = await db.query("SELECT * FROM companies");
     console.log("q", query, "v", values);
-    // expect(result.name).toBe("new name");
-    // expect(result.num_employees).toBe(4);
-    // expect(result.rows).not.toBeUndefined();
+    expect(query).toBe(
+      "UPDATE companies SET name=$1, num_employees=$2 WHERE handle=$3 RETURNING *"
+    );
+    expect(values[0]).toBe("new name");
+    expect(values[1]).toBe(4);
+    expect(values[2]).toBe("test handle");
   });
 });
 

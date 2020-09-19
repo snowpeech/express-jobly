@@ -7,6 +7,8 @@ CREATE TABLE companies
     logo_url TEXT
 );
 
+INSERT INTO companies (handle, name, num_employees) VALUES ('Coco', 'Co and Co', 3);
+
 -- CREATE TABLE jobs
 -- (
 --     id SERIAL PRIMARY KEY ,
