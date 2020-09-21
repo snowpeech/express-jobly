@@ -2,7 +2,12 @@ const express = require("express");
 const router = new express.Router();
 const ExpressError = require("../helpers/expressError");
 
+const jsonschema = require("jsonschema");
+const companySchemaNew = require("../schemas/companySchemaNew.json");
+const companySchemaUpdate = require("../schemas/companySchemaUpdate.json");
+
 const db = require("../db");
+const { query } = require("../db");
 
 // const { validate } = require("jsonschema");
 // const bookSchemaNew = require("../schemas/bookSchemaNew");
@@ -13,12 +18,13 @@ const db = require("../db");
 router.get("/", async (req, res, next) => {
   // This should return the handle and name for all of the company objects. It should also allow for the following query string parameters
   try {
-    const { search, min_employees, max_employees } = req.params;
-    console.log("PARAMS::", req.params);
-    console.log("s", search, "min", min_employees, "max:", max_employees);
+    let counter = 1;
+    let values = [];
+    const { search, min_employees, max_employees } = req.query;
+
     let getCompanies = `SELECT handle, name, num_employees, description, logo_url FROM companies`;
 
-    if (min_employees > max_employees) {
+    if (parseInt(max_employees) < parseInt(min_employees)) {
       throw new ExpressError(
         "min employees should not be greater than max employees",
         400
@@ -26,22 +32,32 @@ router.get("/", async (req, res, next) => {
     }
 
     if (search) {
-      //return filtered list of handles and names
-      //LIKE %term% order by??
-      getCompanies += `WHERE name LIKE %${search}% OR handle LIKE %${search}% `;
+      getCompanies += ` WHERE (name LIKE $${counter} OR handle LIKE $${counter}) `;
+      values.push(`%${search}%`);
+      counter++;
     }
 
     if (min_employees) {
-      //add onto search query?
+      if (search) {
+        getCompanies += `AND num_employees > $${counter}`;
+      } else {
+        getCompanies += ` WHERE num_employees > $${counter}`;
+      }
+      values.push(parseInt(min_employees));
+      counter++;
     }
+
     if (max_employees) {
-      //add onto search query
+      if (search || min_employees) {
+        getCompanies += ` AND num_employees < $${counter}`;
+      } else {
+        getCompanies += ` WHERE num_employees < $${counter}`;
+      }
+      values.push(parseInt(max_employees));
     }
-    //
-    let results = await db.query(getCompanies);
-    console.log("getCompanies", getCompanies);
-    // console.log("results", results);
-    // console.log(results.rows);
+    console.log("getCompanies", getCompanies, "values", values);
+    let results = await db.query(getCompanies, values);
+
     return res.json({ companies: results.rows });
   } catch (e) {
     return next(e);
@@ -50,18 +66,87 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   //create a new company & return newly created company
+  try {
+    const validationResult = jsonschema.validate(req.body, companySchemaNew);
+    if (!validationResult.valid) {
+      let listOfErrors = validationResult.errors.map((error) => error.stack);
+      let error = new ExpressError(listOfErrors, 400);
+      return next(error);
+    }
+    const { handle, name, num_employees, description, logo_url } = req.body;
+    const results = await db.query(
+      `INSERT INTO companies (handle, name, num_employees, description, logo_url) VALUES ($1, $2, $3, $4, $5) RETURNING handle, name, num_employees, description, logo_url`,
+      [handle, name, num_employees, description, logo_url]
+    );
+    return res.json({ company: results.rows[0] });
+  } catch (e) {
+    return next(e);
+  }
 });
 
 router.get("/:handle", async (req, res, next) => {
   //return a single company by its id
+  try {
+    const { handle } = req.params;
+    const result = await db.query(
+      `SELECT handle, name, num_employees, description, logo_url FROM companies WHERE handle = $1`,
+      [handle]
+    );
+    if (result.rows.length === 0) {
+      throw new ExpressError(`No company with handle ${handle} was found`, 400);
+    }
+    return res.json({ company: result.rows[0] });
+  } catch (e) {
+    return next(e);
+  }
 });
 
 router.patch("/:handle", async (req, res, next) => {
   //update an existing company and return updated company
+  // for every value passed in, create an array.
+  //ADD check to not update handle
+  try {
+    const validationResult = jsonschema.validate(req.body, companySchemaUpdate);
+    if (!validationResult.valid) {
+      let listOfErrors = validationResult.errors.map((error) => error.stack);
+      let error = new ExpressError(listOfErrors, 400);
+      return next(error);
+    }
+
+    let fields = [];
+    let values = [req.params.handle];
+    let counter = 2;
+    for (key in req.body) {
+      fields.push(`${key} = $${counter}`);
+      values.push(req.body[key]);
+      counter++;
+    }
+    const results = await db.query(
+      `UPDATE companies SET ${fields.join(", ")} WHERE handle = $1 RETURNING *`,
+      values
+    );
+    return res.json(results.rows);
+  } catch (e) {
+    return next(e);
+  }
 });
 
 router.delete("/:handle", async (req, res, next) => {
   //delete an existing company and return a message
+  try {
+    const result = await db.query(
+      `DELETE FROM companies WHERE handle = $1 RETURNING name`,
+      [req.params.handle]
+    );
+    // console.log("results.rows", result.rows, "length", result.rows.length);
+    if (result.rows.length === 0) {
+      throw new ExpressError(`No company with handle ${handle} was found`, 400);
+    }
+
+    return res.json({ message: "Company deleted" });
+  } catch (e) {
+    return next(e);
+  }
 });
 
 module.exports = router;

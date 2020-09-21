@@ -10,6 +10,9 @@ const app = express();
 
 const companyRoutes = require("./routes/companies");
 
+const bodyParser = require("body-parser");
+app.use(bodyParser.json());
+
 app.use("/companies", companyRoutes);
 
 app.use(express.json());
