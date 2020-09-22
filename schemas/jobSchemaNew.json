@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "title": "tester",
+      "salary": 12000,
+      "equity": 0.3,
+      "company_handle": "loco",
+      "date_posted": "2020-09-21T05:00:00.000Z"
+    }
+  ],
+  "required": ["title", "salary"],
+  "properties": {
+    "title": {
+      "$id": "#/properties/title",
+      "type": "string",
+      "title": "The title schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["tester"]
+    },
+    "salary": {
+      "$id": "#/properties/salary",
+      "type": "integer",
+      "minimum": 0,
+      "title": "The salary schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [12000]
+    },
+    "equity": {
+      "$id": "#/properties/equity",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "title": "The equity schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [0.3]
+    },
+    "company_handle": {
+      "$id": "#/properties/company_handle",
+      "type": "string",
+      "title": "The company_handle schema",
+      "description": "Cross reference with companies table",
+      "default": "",
+      "examples": ["loco"]
+    },
+    "date_posted": {
+      "$id": "#/properties/date_posted",
+      "type": "string",
+      "format": "date",
+      "title": "The date_posted schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["2020-09-21 05:00:00.000Z"]
+    }
+  },
+  "additionalProperties": false
+}

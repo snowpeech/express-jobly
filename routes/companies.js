@@ -5,13 +5,9 @@ const ExpressError = require("../helpers/expressError");
 const jsonschema = require("jsonschema");
 const companySchemaNew = require("../schemas/companySchemaNew.json");
 const companySchemaUpdate = require("../schemas/companySchemaUpdate.json");
+const sqlForPartialUpdate = require("../helpers/partialUpdate");
 
 const db = require("../db");
-const { query } = require("../db");
-
-// const { validate } = require("jsonschema");
-// const bookSchemaNew = require("../schemas/bookSchemaNew");
-// const bookSchemaUpdate = require("../schemas/bookSchemaUpdate");
 
 // const Book = require("../models/book");
 
@@ -39,9 +35,9 @@ router.get("/", async (req, res, next) => {
 
     if (min_employees) {
       if (search) {
-        getCompanies += `AND num_employees > $${counter}`;
+        getCompanies += `AND num_employees >= $${counter}`;
       } else {
-        getCompanies += ` WHERE num_employees > $${counter}`;
+        getCompanies += ` WHERE num_employees >= $${counter}`;
       }
       values.push(parseInt(min_employees));
       counter++;
@@ -49,13 +45,13 @@ router.get("/", async (req, res, next) => {
 
     if (max_employees) {
       if (search || min_employees) {
-        getCompanies += ` AND num_employees < $${counter}`;
+        getCompanies += ` AND num_employees <= $${counter}`;
       } else {
-        getCompanies += ` WHERE num_employees < $${counter}`;
+        getCompanies += ` WHERE num_employees <= $${counter}`;
       }
       values.push(parseInt(max_employees));
     }
-    console.log("getCompanies", getCompanies, "values", values);
+
     let results = await db.query(getCompanies, values);
 
     return res.json({ companies: results.rows });
@@ -113,19 +109,15 @@ router.patch("/:handle", async (req, res, next) => {
       return next(error);
     }
 
-    let fields = [];
-    let values = [req.params.handle];
-    let counter = 2;
-    for (key in req.body) {
-      fields.push(`${key} = $${counter}`);
-      values.push(req.body[key]);
-      counter++;
-    }
-    const results = await db.query(
-      `UPDATE companies SET ${fields.join(", ")} WHERE handle = $1 RETURNING *`,
-      values
+    let { query, values } = sqlForPartialUpdate(
+      "companies",
+      req.body,
+      "handle",
+      req.params.handle
     );
-    return res.json(results.rows);
+
+    const result = await db.query(query, values);
+    return res.json({ company: result.rows });
   } catch (e) {
     return next(e);
   }
@@ -138,11 +130,9 @@ router.delete("/:handle", async (req, res, next) => {
       `DELETE FROM companies WHERE handle = $1 RETURNING name`,
       [req.params.handle]
     );
-    // console.log("results.rows", result.rows, "length", result.rows.length);
-    if (result.rows.length === 0) {
+      if (result.rows.length === 0) {
       throw new ExpressError(`No company with handle ${handle} was found`, 400);
     }
-
     return res.json({ message: "Company deleted" });
   } catch (e) {
     return next(e);
