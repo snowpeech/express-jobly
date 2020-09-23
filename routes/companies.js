@@ -5,11 +5,8 @@ const ExpressError = require("../helpers/expressError");
 const jsonschema = require("jsonschema");
 const companySchemaNew = require("../schemas/companySchemaNew.json");
 const companySchemaUpdate = require("../schemas/companySchemaUpdate.json");
-const sqlForPartialUpdate = require("../helpers/partialUpdate");
 
 const Company = require("../models/company");
-
-const db = require("../db");
 
 // const Book = require("../models/book");
 

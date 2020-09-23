@@ -4,11 +4,11 @@ const ExpressError = require("../helpers/expressError");
 
 const jsonschema = require("jsonschema");
 const jobSchemaNew = require("../schemas/jobSchemaNew.json");
-// const jobSchemaNew = require("../schemas/jobSchema.json");
 const jobSchemaUpdate = require("../schemas/jobSchemaUpdate.json");
 
 const db = require("../db");
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
+const sqlForPost = require("../helpers/sqlForPost");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -75,25 +75,9 @@ router.post("/", async (req, res, next) => {
       return next(error);
     }
 
-    let fields = [];
-    let values = [];
-    let idxArr = [];
+    let { queryStr, values } = sqlForPost(req.body, "jobs");
 
-    let idx = 1;
-    for (let field in req.body) {
-      fields.push(field);
-      values.push(req.body[field]);
-      idxArr.push(`$${idx}`);
-      idx += 1;
-    }
-
-    let cols = fields.join(", ");
-    let idxs = idxArr.join(", ");
-
-    const result = await db.query(
-      `INSERT INTO jobs (${cols}) VALUES (${idxs}) RETURNING *`,
-      values
-    );
+    const result = await db.query(queryStr, values);
 
     return res.json(result.rows[0]);
   } catch (e) {

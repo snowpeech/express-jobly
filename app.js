@@ -13,7 +13,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use("/companies", companyRoutes);
 app.use("/jobs", jobRoutes);
-// app.use("/users", userRoutes);
+app.use("/users", userRoutes);
 
 app.use(express.json());
 // add logging system

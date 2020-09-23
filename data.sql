@@ -21,7 +21,25 @@ CREATE TABLE jobs
 ()
 );
 
+
 -- INSERT INTO jobs
 --     (title, salary, equity, company_handle, date_posted)
 -- VALUES
 --     ('rough', 120000, 0.25, 'Coco', '2020-05-11');
+
+
+CREATE TABLE users
+(
+    username TEXT PRIMARY KEY,
+    password TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    photo_url TEXT,
+    is_admin BOOLEAN NOT NULL DEFAULT false
+)
+
+-- INSERT INTO users
+--     (username, password, first_name, last_name, email, photo_url)
+-- VALUES
+--     ('username', 'secret123', 'Sam', 'Adams', 'sam@gmail.com', 'www.photo.url');
