@@ -58,6 +58,7 @@
       "title": "The date_posted schema",
       "description": "An explanation about the purpose of this instance.",
       "default": "",
+      "message": { "format": "Correct date format is YYYY-MM-DD" }, 
       "examples": ["2020-09-21 05:00:00.000Z"]
     }
   },

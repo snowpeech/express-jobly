@@ -8,184 +8,181 @@ const db = require("../../db");
 // const router = new express.Router();
 // const ExpressError = require("../helpers/expressError");
 
+let jobId;
+
 beforeEach(async () => {
-  let result = await db.query(
-    `INSERT INTO companies (handle, name, num_employees, description, logo_url)
-      VALUES
-      ('test', 'test name', 50, 'test description', 'http://logo.url' ),
-      ('big', 'big co', 500, 'test description', 'http://logo.url' ),
-      ('small', 'small co', 5, 'test description', 'http://logo.url' ),
-      ('coalas', 'coalas', 50, 'test description', 'http://logo.url' );`
+  await db.query(
+    `INSERT INTO companies (handle, name)
+    VALUES
+    ('test', 'test name'),
+    ('big', 'big co' );`
   );
+  let result = await db.query(
+    `INSERT INTO jobs (title, salary, equity, company_handle, date_posted)
+      VALUES
+      ('chef', 65, 0.1, 'test', '2019-09-20'),
+      ('tester', 65000, 0.5, 'big', '2020-05-20'),
+      ('baker', 65, 0.5, 'big', '2020-09-22') 
+      RETURNING id`
+  );
+  jobId = result.rows[0].id;
+  // console.log(jobId);
 });
 
 afterEach(async () => {
-  let result = await db.query(`DELETE FROM companies`);
+  await db.query(` DELETE FROM jobs`);
+  await db.query(`DELETE FROM companies`);
 });
 
 afterAll(async () => {
   await db.end();
 });
 
-describe("GET companies/", function () {
-  test("Returns all companies data", async function () {
-    const response = await request(app).get(`/companies`);
+// describe("GET jobs/", function () {
+//   test("Returns all jobs data", async function () {
+//     const response = await request(app).get(`/jobs`);
+//     expect(response.statusCode).toBe(200);
+
+//     expect(response.body.jobs.length).toBe(3);
+//     expect(Date.parse(response.body.jobs[0].date_posted)).toBeGreaterThan(
+//       Date.parse(response.body.jobs[2].date_posted)
+//     );
+//   });
+
+//   test("Returns job data for search", async () => {
+//     let response = await request(app).get(`/jobs?search=chef`);
+//     expect(response.statusCode).toEqual(200);
+//     expect(response.body.jobs.length).toBe(1);
+
+//     response = await request(app).get(`/jobs?search=test`);
+//     expect(response.statusCode).toEqual(200);
+
+//     expect(response.body.jobs.length).toBe(2);
+//   });
+
+//   test("Returns companies matching min equity constraint", async () => {
+//     const response = await request(app).get(`/jobs?min_equity=0.3`);
+
+//     console.log("BODY", response.body);
+//     expect(response.statusCode).toEqual(200);
+//     expect(response.body.jobs.length).toBe(2);
+//   });
+
+//   test("Returns companies matching min salary constraint", async () => {
+//     const response = await request(app).get(`/jobs?min_salary=100`);
+
+//     console.log("BODY", response.body);
+//     expect(response.statusCode).toEqual(200);
+//     expect(response.body.jobs.length).toBe(1);
+//   });
+
+//   test("Returns message when no jobs found", async () => {
+//     const response = await request(app).get(`/jobs?search=aloo`);
+//     expect(response.statusCode).toBe(200);
+//     expect(response.body.message).toBe("No jobs found");
+//   });
+// });
+
+// describe("GET /jobs/:handle", function () {
+//   test("Returns company data at handle", async () => {
+//     const response = await request(app).get(`/jobs/${jobId}`);
+//     expect(response.statusCode).toBe(200);
+//     expect(response.body).toEqual({
+//       job: {
+//         title: "chef",
+//         salary: 65,
+//         equity: 0.1,
+//         company_handle: "test",
+//         date_posted: "2019-09-20T05:00:00.000Z",
+//       },
+//     });
+//   });
+
+//   test("Returns error message for nonexistent job id", async () => {
+//     const response = await request(app).get(`/jobs/999`);
+//     expect(response.body).toEqual({
+//       message: "No job with id 999 was found",
+//       status: 400,
+//     });
+//   });
+// });
+
+// describe("POST /jobs", function () {
+//   test("Creates a job with minimum fields", async () => {
+//     const response = await request(app).post(`/jobs`).send({
+//       title: "artist",
+//       salary: 12200,
+//     });
+//     console.log("RESPONSE", response);
+//     expect(response.statusCode).toBe(200);
+//     expect(response.body.title).toBe("artist");
+//     expect(response.body.salary).toBe(12200);
+
+//     const resp = await request(app).get(`/jobs`);
+//     expect(resp.body.jobs.length).toBe(4);
+//   });
+
+//   test("Returns error message for company missing required info", async () => {
+//     const response = await request(app).post(`/companies`).send({
+//       salary: 12200,
+//     });
+//     expect(response.statusCode).toBe(400);
+//     expect(response.body.message[0]).toBe(
+//       'instance requires property "handle"'
+//     );
+//   });
+// });
+
+describe("PATCH /jobs/:id", function () {
+  test("Updates a job", async () => {
+    const response = await request(app).patch(`/jobs/${jobId}`).send({
+      title: "tinkerbell",
+      salary: 1200,
+    });
+
     expect(response.statusCode).toBe(200);
+    expect(response.body.job.salary).toEqual(1200);
+    expect(response.body.job.title).toEqual("tinkerbell");
+    const resp = await request(app).get(`/jobs`);
 
-    console.log("BODY", response.body);
-    expect(response.body.companies.length).toBe(4);
+    expect(resp.body.jobs.length).toBe(3);
   });
 
-  test("Returns company data for search", async () => {
-    const response = await request(app).get(`/companies?search=co`);
-    expect(response.statusCode).toEqual(200);
-    expect(response.body.companies.length).toBe(3);
-  });
-
-  test("Returns companies matching search, number of employees constraints", async () => {
-    const response = await request(app).get(
-      `/companies?search=co&min_employees=10&max_employees=500`
-    );
-    expect(response.statusCode).toEqual(200);
-    expect(response.body.companies.length).toBe(2);
-  });
-
-  test("Returns error when min companies > max companies", async () => {
-    const response = await request(app).get(
-      `/companies?search=co&min_employees=1000&max_employees=500`
-    );
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toBe(
-      "min employees should not be greater than max employees"
-    );
-  });
-});
-
-describe("GET /companies/:handle", function () {
-  test("Returns company data at handle", async () => {
-    const response = await request(app).get(`/companies/test`);
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({
-      company: {
-        handle: "test",
-        name: "test name",
-        num_employees: 50,
-        description: "test description",
-        logo_url: "http://logo.url",
-      },
-    });
-  });
-
-  test("Returns error message for nonexistent company handle", async () => {
-    const response = await request(app).get(`/companies/notHandle`);
-    expect(response.body).toEqual({
-      message: "No company with handle notHandle was found",
-      status: 400,
-    });
-  });
-});
-
-describe("POST /companies", function () {
-  test("Creates a company", async () => {
-    const response = await request(app).post(`/companies`).send({
-      handle: "tbell",
-      name: "Taco Bell",
-      num_employees: 1200,
-      description: "favorite of college students",
-      logo_url: "https://www.tacodeli.com",
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({
-      company: {
-        handle: "tbell",
-        name: "Taco Bell",
-        num_employees: 1200,
-        description: "favorite of college students",
-        logo_url: "https://www.tacodeli.com",
-      },
-    });
-    const resp = await request(app).get(`/companies`);
-
-    expect(resp.body.companies.length).toBe(5);
-  });
-
-  test("Returns error message for company missing required info", async () => {
-    const response = await request(app).post(`/companies`).send({
-      name: "Taco Bell",
-      num_employees: 1200,
-      description: "favorite of college students",
-      logo_url: "https://www.tacodeli.com",
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message[0]).toBe(
-      'instance requires property "handle"'
-    );
-  });
-});
-
-describe("PATCH /companies/:handle", function () {
-  test("Updates a company", async () => {
-    const response = await request(app).patch(`/companies/test`).send({
-      name: "Taco Bell",
-      num_employees: 1200,
-      description: "favorite of college students",
-      logo_url: "https://www.tacobell.com",
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.body.company).toEqual([
-      {
-        handle: "test",
-        name: "Taco Bell",
-        num_employees: 1200,
-        description: "favorite of college students",
-        logo_url: "https://www.tacobell.com",
-      },
-    ]);
-    const resp = await request(app).get(`/companies`);
-
-    expect(resp.body.companies.length).toBe(4);
-  });
-
-  test("Returns error message for duplicate name", async () => {
-    const response = await request(app).patch(`/companies/test`).send({
-      name: "big co",
-      num_employees: 1200,
-      description: "favorite of college students",
-      logo_url: "https://www.tacodeli.com",
-    });
-    expect(response.statusCode).toBe(500);
-    expect(response.body.message).toBe(
-      'duplicate key value violates unique constraint "companies_name_key"'
-    );
-  });
-
-  test("Returns error message for submitting handle in body", async () => {
-    const response = await request(app).patch(`/companies/test`).send({
-      handle: "test",
-      name: "Taco Bell",
+  test("Returns error message for passing in unacceptable update", async () => {
+    const response = await request(app).patch(`/jobs/${jobId}`).send({
+      salary: "aaa",
     });
     expect(response.statusCode).toBe(400);
     expect(response.body.message[0]).toBe(
-      'instance additionalProperty "handle" exists in instance when not allowed'
+      "instance.salary is not of a type(s) integer"
+    );
+  });
+
+  test("Returns error message for submitting id in body", async () => {
+    const response = await request(app).patch(`/jobs/${jobId}`).send({
+      id: 23,
+      title: "text",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message[0]).toBe(
+      'instance additionalProperty "id" exists in instance when not allowed'
     );
   });
 });
 
-describe("DELETE /companies/:handle", function () {
-  test("Deletes a company", async () => {
-    const response = await request(app).delete(`/companies/test`);
+describe("DELETE /jobs/:id", function () {
+  test("Deletes a job", async () => {
+    const response = await request(app).delete(`/jobs/${jobId}`);
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ message: "Company deleted" });
+    expect(response.body).toEqual({ message: "Job deleted" });
 
-    const resp = await request(app).get(`/companies`);
-    expect(resp.body.companies.length).toBe(3);
+    const resp = await request(app).get(`/jobs`);
+    expect(resp.body.jobs.length).toBe(2);
   });
 
   test("Returns error message for company missing required info", async () => {
-    const response = await request(app).delete(`/companies/notHandle`);
-    expect(response.statusCode).toBe(500);
-    expect(response.body.message).toBe("handle is not defined");
+    const response = await request(app).delete(`/jobs/1`);
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe(`No job with id 1 was found`);
   });
 });
-
-// patch & delete :/

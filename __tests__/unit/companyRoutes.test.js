@@ -9,7 +9,7 @@ const db = require("../../db");
 // const ExpressError = require("../helpers/expressError");
 
 beforeEach(async () => {
-  let result = await db.query(
+  await db.query(
     `INSERT INTO companies (handle, name, num_employees, description, logo_url)
       VALUES
       ('test', 'test name', 50, 'test description', 'http://logo.url' ),
@@ -31,8 +31,6 @@ describe("GET companies/", function () {
   test("Returns all companies data", async function () {
     const response = await request(app).get(`/companies`);
     expect(response.statusCode).toBe(200);
-
-    console.log("BODY", response.body);
     expect(response.body.companies.length).toBe(4);
   });
 

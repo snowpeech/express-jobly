@@ -51,9 +51,12 @@ router.get("/", async (req, res, next) => {
       values.push(parseFloat(min_equity));
     }
     let getJobs = `SELECT title, company_handle, salary, date_posted FROM jobs ${queryStr} ORDER BY date_posted DESC`;
-    console.log("getJobs", getJobs, "values", values);
-    let results = await db.query(getJobs, values);
+    // console.log("getJobs", getJobs, "values", values);
 
+    let results = await db.query(getJobs, values);
+    if (results.rows.length === 0) {
+      return res.json({ message: "No jobs found" });
+    }
     return res.json({ jobs: results.rows });
   } catch (e) {
     return next(e);
@@ -92,7 +95,7 @@ router.post("/", async (req, res, next) => {
       values
     );
 
-    return res.json(result.rows);
+    return res.json(result.rows[0]);
   } catch (e) {
     return next(e);
   }
@@ -109,7 +112,7 @@ router.get("/:id", async (req, res, next) => {
     if (result.rows.length === 0) {
       throw new ExpressError(`No job with id ${req.params.id} was found`, 400);
     }
-    return res.json({ job: result.rows });
+    return res.json({ job: result.rows[0] });
   } catch (e) {
     return next(e);
   }
@@ -134,7 +137,7 @@ router.patch("/:id", async (req, res, next) => {
     );
 
     const result = await db.query(query, values);
-    return res.json({ job: result.rows });
+    return res.json({ job: result.rows[0] });
   } catch (e) {
     return next(e);
   }
