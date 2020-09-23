@@ -84,14 +84,20 @@ router.get("/:handle", async (req, res, next) => {
   //return a single company by its id
   try {
     const { handle } = req.params;
-    const result = await db.query(
+    const coRes = await db.query(
       `SELECT handle, name, num_employees, description, logo_url FROM companies WHERE handle = $1`,
       [handle]
     );
-    if (result.rows.length === 0) {
+    if (coRes.rows.length === 0) {
       throw new ExpressError(`No company with handle ${handle} was found`, 400);
     }
-    return res.json({ company: result.rows[0] });
+    const company = coRes.rows[0];
+    const jobRes = await db.query(
+      `SELECT  id, title, salary, equity, date_posted FROM jobs WHERE company_handle = $1`,
+      [req.params.handle]
+    );
+    company.jobs = jobRes.rows;
+    return res.json({ company });
   } catch (e) {
     return next(e);
   }
@@ -130,7 +136,7 @@ router.delete("/:handle", async (req, res, next) => {
       `DELETE FROM companies WHERE handle = $1 RETURNING name`,
       [req.params.handle]
     );
-      if (result.rows.length === 0) {
+    if (result.rows.length === 0) {
       throw new ExpressError(`No company with handle ${handle} was found`, 400);
     }
     return res.json({ message: "Company deleted" });

@@ -17,10 +17,18 @@ beforeEach(async () => {
       ('small', 'small co', 5, 'test description', 'http://logo.url' ),
       ('coalas', 'coalas', 50, 'test description', 'http://logo.url' );`
   );
+  await db.query(
+    `INSERT INTO jobs (title, salary, company_handle)
+      VALUES
+      ('chef', 65000,  'test'),
+      ('baker', 65000,  'test') 
+      `
+  );
 });
 
 afterEach(async () => {
-  let result = await db.query(`DELETE FROM companies`);
+  await db.query(`DELETE FROM jobs`);
+  await db.query(`DELETE FROM companies`);
 });
 
 afterAll(async () => {
@@ -63,15 +71,12 @@ describe("GET /companies/:handle", function () {
   test("Returns company data at handle", async () => {
     const response = await request(app).get(`/companies/test`);
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({
-      company: {
-        handle: "test",
-        name: "test name",
-        num_employees: 50,
-        description: "test description",
-        logo_url: "http://logo.url",
-      },
-    });
+    expect(response.body.company.handle);
+    expect(response.body.company.name);
+    expect(response.body.company.num_employees);
+    expect(response.body.company.description);
+    expect(response.body.company.logo_url);
+    expect(response.body.company.jobs.length).toBe(2);
   });
 
   test("Returns error message for nonexistent company handle", async () => {
