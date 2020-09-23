@@ -1,6 +1,3 @@
-const jsonschema = require("jsonschema");
-const companySchemaNew = require("../schemas/companySchemaNew.json");
-const companySchemaUpdate = require("../schemas/companySchemaUpdate.json");
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
 const ExpressError = require("../helpers/expressError");
 
@@ -75,8 +72,25 @@ class Company {
     return results.rows[0];
   }
 
-  static async update(){}
-  // static async delete() => {}
+  static async update(newInfo, id) {
+    let { query, values } = sqlForPartialUpdate(
+      "companies",
+      newInfo,
+      "handle",
+      id
+    );
+
+    const result = await db.query(query, values);
+    return result.rows;
+  }
+
+  static async delete(handle) {
+    const result = await db.query(
+      `DELETE FROM companies WHERE handle = $1 RETURNING name`,
+      [handle]
+    );
+    return result;
+  }
 }
 
 module.exports = Company;

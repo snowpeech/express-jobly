@@ -35,6 +35,7 @@ router.post("/", async (req, res, next) => {
       let error = new ExpressError(listOfErrors, 400);
       return next(error);
     }
+
     const { handle, name, num_employees, description, logo_url } = req.body;
     const result = await Company.create(
       handle,
@@ -72,16 +73,8 @@ router.patch("/:handle", async (req, res, next) => {
       let error = new ExpressError(listOfErrors, 400);
       return next(error);
     }
-
-    let { query, values } = sqlForPartialUpdate(
-      "companies",
-      req.body,
-      "handle",
-      req.params.handle
-    );
-
-    const result = await db.query(query, values);
-    return res.json({ company: result.rows });
+    const result = await Company.update(req.body, req.params.handle);
+    return res.json({ company: result });
   } catch (e) {
     return next(e);
   }
@@ -90,10 +83,7 @@ router.patch("/:handle", async (req, res, next) => {
 router.delete("/:handle", async (req, res, next) => {
   //delete an existing company and return a message
   try {
-    const result = await db.query(
-      `DELETE FROM companies WHERE handle = $1 RETURNING name`,
-      [req.params.handle]
-    );
+    let result = await Company.delete(req.params.handle);
     if (result.rows.length === 0) {
       throw new ExpressError(`No company with handle ${handle} was found`, 400);
     }
