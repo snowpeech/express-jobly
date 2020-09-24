@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "username": "user123",
+      "password": "secret123",
+      "first_name": "sam",
+      "last_name": "adams",
+      "email": "user@gmail.com",
+      "photo_url": null,
+      "is_admin": false
+    }
+  ],
+  "required": ["username", "password", "first_name", "last_name", "email"],
+  "properties": {
+    "username": {
+      "$id": "#/properties/username",
+      "type": "string",
+      "minLength": 1,
+      "title": "The username schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["user123"]
+    },
+    "password": {
+      "$id": "#/properties/password",
+      "type": "string",
+      "minLength": 1,
+      "title": "The password schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["secret123"]
+    },
+    "first_name": {
+      "$id": "#/properties/first_name",
+      "type": "string",
+      "minLength": 1,
+      "title": "The first_name schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["sam"]
+    },
+    "last_name": {
+      "$id": "#/properties/last_name",
+      "type": "string",
+      "minLength": 1,
+      "title": "The last_name schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["adams"]
+    },
+    "email": {
+      "$id": "#/properties/email",
+      "type": "string",
+      "minLength": 1,
+      "format": "email",
+      "title": "The email schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["user@gmail.com"]
+    },
+    "photo_url": {
+      "$id": "#/properties/photo_url",
+      "type": "string",
+      "format": "uri",
+      "title": "The photo_url schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": null,
+      "examples": [null]
+    },
+    "is_admin": {
+      "$id": "#/properties/is_admin",
+      "type": "boolean",
+      "title": "The is_admin schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": false,
+      "examples": [false]
+    }
+  },
+  "additionalProperties": false
+}

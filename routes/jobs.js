@@ -77,7 +77,7 @@ router.post("/", async (req, res, next) => {
 
     let { queryStr, values } = sqlForPost(req.body, "jobs");
 
-    const result = await db.query(queryStr, values);
+    const result = await db.query(`${queryStr} RETURNING *`, values);
 
     return res.json(result.rows[0]);
   } catch (e) {
@@ -121,6 +121,11 @@ router.patch("/:id", async (req, res, next) => {
     );
 
     const result = await db.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.json({ message: `No job with id ${req.params.id} was found` });
+    }
+
     return res.json({ job: result.rows[0] });
   } catch (e) {
     return next(e);

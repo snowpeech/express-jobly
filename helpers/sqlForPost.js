@@ -4,7 +4,7 @@ function sqlForPost(obj, table) {
   let fields = [];
   let values = [];
   let idxArr = [];
-  console.log("SQLFORPOST", obj, table);
+
   let idx = 1;
   for (let field in obj) {
     fields.push(field);
@@ -15,9 +15,9 @@ function sqlForPost(obj, table) {
 
   let cols = fields.join(", ");
   let idxs = idxArr.join(", ");
-  console.log("SQLFORPOST COLS & IDXARR", cols, idxArr);
-  const queryStr = `INSERT INTO ${table} (${cols}) VALUES (${idxs}) RETURNING *`;
-  console.log("SQLFORPOST QUERY & VALUES", queryStr, "!!!!!!!!!!!!!!!", values);
+
+  const queryStr = `INSERT INTO ${table} (${cols}) VALUES (${idxs})`;
+
   return { queryStr, values };
 }
 

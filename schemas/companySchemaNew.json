@@ -19,6 +19,7 @@
     "handle": {
       "$id": "#/properties/handle",
       "type": "string",
+      "minLength": 1,
       "title": "The handle schema",
       "description": "An explanation about the purpose of this instance.",
       "default": "",
@@ -27,6 +28,7 @@
     "name": {
       "$id": "#/properties/name",
       "type": "string",
+      "minLength": 1,
       "title": "The name schema",
       "description": "An explanation about the purpose of this instance.",
       "default": "",
