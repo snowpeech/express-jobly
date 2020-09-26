@@ -9,55 +9,20 @@ const jobSchemaUpdate = require("../schemas/jobSchemaUpdate.json");
 const db = require("../db");
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
 const sqlForPost = require("../helpers/sqlForPost");
+const Job = require("../models/job");
 
 router.get("/", async (req, res, next) => {
   try {
     // This route should list all the titles and company handles for all jobs, ordered by the most recently posted jobs. It should also allow for the following query string parameters
     // return JSON of {jobs: [job, ...]}
-    let counter = 1;
-    let values = [];
     const { search, min_salary, min_equity } = req.query;
-    console.log(
-      "search",
-      search,
-      "min_salary",
-      min_salary,
-      "min_equity",
-      min_equity
-    );
-    let queryStr = "";
-    if (search) {
-      queryStr = ` WHERE (title LIKE $${counter} OR company_handle LIKE $${counter}) `;
-      values.push(`%${search}%`);
-      counter++;
-    }
 
-    if (min_salary) {
-      if (search) {
-        queryStr += `AND salary >= $${counter}`;
-      } else {
-        queryStr += ` WHERE salary >= $${counter}`;
-      }
-      values.push(parseFloat(min_salary));
-      counter++;
-    }
-
-    if (min_equity) {
-      if (search || min_salary) {
-        queryStr += ` AND equity >= $${counter}`;
-      } else {
-        queryStr += ` WHERE equity >= $${counter}`;
-      }
-      values.push(parseFloat(min_equity));
-    }
-    let getJobs = `SELECT title, company_handle, salary, date_posted FROM jobs ${queryStr} ORDER BY date_posted DESC`;
-    // console.log("getJobs", getJobs, "values", values);
-
-    let results = await db.query(getJobs, values);
-    if (results.rows.length === 0) {
+    let result = await Job.getAll(search, min_salary, min_equity);
+    if (result.length === 0) {
       return res.json({ message: "No jobs found" });
     }
-    return res.json({ jobs: results.rows });
+
+    return res.json({ jobs: result });
   } catch (e) {
     return next(e);
   }
@@ -75,11 +40,8 @@ router.post("/", async (req, res, next) => {
       return next(error);
     }
 
-    let { queryStr, values } = sqlForPost(req.body, "jobs");
-
-    const result = await db.query(`${queryStr} RETURNING *`, values);
-
-    return res.json(result.rows[0]);
+    let result = await Job.create(req.body);
+    return res.json({ job: result });
   } catch (e) {
     return next(e);
   }
@@ -89,14 +51,12 @@ router.get("/:id", async (req, res, next) => {
   try {
     // This route should show information about a specific job including a key of company which is an object that contains all of the information about the company associated with it.
     // It should return JSON of {job: jobData}
-    const result = await db.query(
-      `SELECT  title, salary, equity, company_handle, date_posted FROM jobs WHERE id = $1`,
-      [req.params.id]
-    );
-    if (result.rows.length === 0) {
+
+    let result = await Job.getOne(req.params.id);
+    if (!result) {
       throw new ExpressError(`No job with id ${req.params.id} was found`, 400);
     }
-    return res.json({ job: result.rows[0] });
+    return res.json({ job: result });
   } catch (e) {
     return next(e);
   }
@@ -113,20 +73,13 @@ router.patch("/:id", async (req, res, next) => {
       return next(error);
     }
 
-    let { query, values } = sqlForPartialUpdate(
-      "jobs",
-      req.body,
-      "id",
-      req.params.id
-    );
+    const result = await Job.update(req.body, req.params.id);
 
-    const result = await db.query(query, values);
-
-    if (result.rows.length === 0) {
-      return res.json({ message: `No job with id ${req.params.id} was found` });
+    if (!result) {
+      throw new ExpressError(`No job with id ${req.params.id} was found`, 400);
     }
 
-    return res.json({ job: result.rows[0] });
+    return res.json({ job: result });
   } catch (e) {
     return next(e);
   }
@@ -136,11 +89,9 @@ router.delete("/:id", async (req, res, next) => {
   try {
     // delete job and return message
     // return JSON of { message: "Job deleted" }
-    const result = await db.query(
-      `DELETE FROM jobs WHERE id = $1 RETURNING id`,
-      [req.params.id]
-    );
-    if (result.rows.length === 0) {
+
+    const result = await Job.delete(req.params.id);
+    if (!result) {
       throw new ExpressError(`No job with id ${req.params.id} was found`, 400);
     }
     return res.json({ message: "Job deleted" });

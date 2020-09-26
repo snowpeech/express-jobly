@@ -9,13 +9,15 @@ const userSchemaUpdate = require("../schemas/userSchemaUpdate.json");
 const db = require("../db");
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
 const sqlForPost = require("../helpers/sqlForPost");
+const User = require("../models/user");
 
 router.get("/", async (req, res, next) => {
   try {
-    const result = await db.query(
-      `SELECT username, first_name, last_name, email FROM users`
-    );
-    return res.json({ users: result.rows });
+    // const result = await db.query(
+    //   `SELECT username, first_name, last_name, email FROM users`
+    // );
+    const result = await User.getAll();
+    return res.json({ users: result });
   } catch (e) {}
 });
 
