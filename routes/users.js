@@ -29,7 +29,10 @@ router.post("/", async (req, res, next) => {
     }
 
     let { queryStr, values } = sqlForPost(req.body, "users");
-    const result = await db.query(queryStr, values);
+    const result = await db.query(
+      `${queryStr} RETURNING username, first_name, last_name, email`,
+      values
+    );
     return res.json(result.rows[0]);
   } catch (e) {
     return next(e);
@@ -42,8 +45,8 @@ router.get("/:username", async (req, res, next) => {
       `SELECT username, first_name, last_name, email, photo_url FROM users WHERE username = $1`,
       [req.params.username]
     );
-    if (results.rows.length === 0) {
-      return res.json({ message: `${req.params.username} not found` });
+    if (result.rows.length === 0) {
+      throw new ExpressError(`${req.params.username} not found`, 400);
     }
     return res.json({ user: result.rows[0] });
   } catch (e) {
@@ -78,6 +81,14 @@ router.patch("/:username", async (req, res, next) => {
 
 router.delete("/:username", async (req, res, next) => {
   try {
+    const result = await db.query(
+      `DELETE FROM users WHERE username = $1 RETURNING username`,
+      [req.params.username]
+    );
+    if (result.rows.length === 0) {
+      throw new ExpressError(`${req.params.username} not found`, 400);
+    }
+    return res.json({ user: result.rows[0] });
   } catch (e) {
     return next(e);
   }

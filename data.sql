@@ -37,7 +37,7 @@ CREATE TABLE users
     email TEXT NOT NULL UNIQUE,
     photo_url TEXT,
     is_admin BOOLEAN NOT NULL DEFAULT false
-)
+);
 
 -- INSERT INTO users
 --     (username, password, first_name, last_name, email, photo_url)

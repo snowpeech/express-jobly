@@ -71,11 +71,11 @@ describe("GET /companies/:handle", function () {
   test("Returns company data at handle", async () => {
     const response = await request(app).get(`/companies/test`);
     expect(response.statusCode).toBe(200);
-    expect(response.body.company.handle);
-    expect(response.body.company.name);
-    expect(response.body.company.num_employees);
-    expect(response.body.company.description);
-    expect(response.body.company.logo_url);
+    expect(response.body.company.handle).toBe("test");
+    expect(response.body.company.name).toBe("test name");
+    expect(response.body.company.num_employees).toBe(50);
+    expect(response.body.company.description).toBe("test description");
+    expect(response.body.company.logo_url).toBe("http://logo.url");
     expect(response.body.company.jobs.length).toBe(2);
   });
 
@@ -123,6 +123,9 @@ describe("POST /companies", function () {
     expect(response.body.message[0]).toBe(
       'instance requires property "handle"'
     );
+
+    const resp = await request(app).get(`/companies`);
+    expect(resp.body.companies.length).toBe(4);
   });
 });
 
