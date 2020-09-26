@@ -1,7 +1,7 @@
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
 const sqlForPost = require("../helpers/sqlForPost");
 const ExpressError = require("../helpers/expressError");
-
+const bcrypt = require("bcrypt");
 const db = require("../db");
 
 class User {
@@ -16,6 +16,9 @@ class User {
       `SELECT username, first_name, last_name, email, photo_url FROM users WHERE username = $1`,
       [username]
     );
+    if (!result.rows[0]) {
+      throw new ExpressError(`${username} not found`, 404);
+    }
     return result.rows[0];
   }
   static async update(username, obj) {
@@ -26,6 +29,9 @@ class User {
       username
     );
     const result = await db.query(query, values);
+    if (!result.rows[0]) {
+      throw new ExpressError(`${username} not found`, 404);
+    }
     return result.rows[0];
   }
   static async register(obj) {
@@ -34,6 +40,7 @@ class User {
       `${queryStr} RETURNING username, first_name, last_name, email`,
       values
     );
+
     return result.rows[0];
   }
   static async login() {}
@@ -42,6 +49,9 @@ class User {
       `DELETE FROM users WHERE username = $1 RETURNING username`,
       [username]
     );
+    if (!result.rows[0]) {
+      throw new ExpressError(`${username} not found`, 404);
+    }
     return result.rows[0];
   }
 }

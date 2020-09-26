@@ -87,7 +87,7 @@ describe("GET /users/:username", function () {
 
   test("Returns error message for nonexistent username", async () => {
     const response = await request(app).get(`/users/notUser`);
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(404);
     expect(response.body.message).toBe("notUser not found");
   });
 });
@@ -133,7 +133,7 @@ describe("DELETE /users/:username", function () {
 
   test("Does not delete a user at wrong username", async () => {
     const response = await request(app).delete(`/users/notUser`);
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(404);
     expect(response.body.message).toBe("notUser not found");
 
     const resp = await request(app).get(`/users`);
