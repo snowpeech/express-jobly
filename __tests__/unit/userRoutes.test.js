@@ -125,6 +125,8 @@ describe("DELETE /users/:username", function () {
     const response = await request(app).delete(`/users/user1`);
 
     expect(response.statusCode).toBe(200);
+    expect(response.body.message).toBe("User deleted");
+
     const resp = await request(app).get(`/users`);
     expect(resp.body.users.length).toBe(2);
   });

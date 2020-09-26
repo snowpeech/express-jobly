@@ -11,11 +11,39 @@ class User {
     );
     return result.rows;
   }
-  static async getOne() {}
-  static async update() {}
-  static async register() {}
+  static async getOne(username) {
+    const result = await db.query(
+      `SELECT username, first_name, last_name, email, photo_url FROM users WHERE username = $1`,
+      [username]
+    );
+    return result.rows[0];
+  }
+  static async update(username, obj) {
+    let { query, values } = sqlForPartialUpdate(
+      "users",
+      obj,
+      "username",
+      username
+    );
+    const result = await db.query(query, values);
+    return result.rows[0];
+  }
+  static async register(obj) {
+    let { queryStr, values } = sqlForPost(obj, "users");
+    const result = await db.query(
+      `${queryStr} RETURNING username, first_name, last_name, email`,
+      values
+    );
+    return result.rows[0];
+  }
   static async login() {}
-  static async delete() {}
+  static async delete(username) {
+    const result = await db.query(
+      `DELETE FROM users WHERE username = $1 RETURNING username`,
+      [username]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

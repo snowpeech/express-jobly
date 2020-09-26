@@ -29,13 +29,8 @@ router.post("/", async (req, res, next) => {
       let error = new ExpressError(listOfErrors, 400);
       return next(error);
     }
-
-    let { queryStr, values } = sqlForPost(req.body, "users");
-    const result = await db.query(
-      `${queryStr} RETURNING username, first_name, last_name, email`,
-      values
-    );
-    return res.json(result.rows[0]);
+    const result = await User.register(req.body);
+    return res.json(result);
   } catch (e) {
     return next(e);
   }
@@ -43,14 +38,11 @@ router.post("/", async (req, res, next) => {
 
 router.get("/:username", async (req, res, next) => {
   try {
-    const result = await db.query(
-      `SELECT username, first_name, last_name, email, photo_url FROM users WHERE username = $1`,
-      [req.params.username]
-    );
-    if (result.rows.length === 0) {
+    const result = await User.getOne(req.params.username);
+    if (!result) {
       throw new ExpressError(`${req.params.username} not found`, 400);
     }
-    return res.json({ user: result.rows[0] });
+    return res.json({ user: result });
   } catch (e) {
     return next(e);
   }
@@ -65,17 +57,19 @@ router.patch("/:username", async (req, res, next) => {
       let error = new ExpressError(listOfErrors, 400);
       return next(error);
     }
-    let { query, values } = sqlForPartialUpdate(
-      "users",
-      req.body,
-      "username",
-      req.params.username
-    );
-    const result = await db.query(query, values);
-    if (result.rows.length === 0) {
+
+    const result = await User.update(req.params.username, req.body);
+    // let { query, values } = sqlForPartialUpdate(
+    //   "users",
+    //   req.body,
+    //   "username",
+    //   req.params.username
+    // );
+    // const result = await db.query(query, values);
+    if (!result) {
       return res.json({ message: `${req.params.username} not found` });
     }
-    return res.json({ user: result.rows[0] });
+    return res.json({ user: result });
   } catch (e) {
     return next(e);
   }
@@ -83,14 +77,15 @@ router.patch("/:username", async (req, res, next) => {
 
 router.delete("/:username", async (req, res, next) => {
   try {
-    const result = await db.query(
-      `DELETE FROM users WHERE username = $1 RETURNING username`,
-      [req.params.username]
-    );
-    if (result.rows.length === 0) {
+    // const result = await db.query(
+    //   `DELETE FROM users WHERE username = $1 RETURNING username`,
+    //   [req.params.username]
+    // );
+    const result = await User.delete(req.params.username);
+    if (!result) {
       throw new ExpressError(`${req.params.username} not found`, 400);
     }
-    return res.json({ user: result.rows[0] });
+    return res.json({ message: "User deleted" });
   } catch (e) {
     return next(e);
   }
