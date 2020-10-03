@@ -35,7 +35,7 @@ describe("GET users/", function () {
 });
 
 describe("POST users/", function () {
-  test("Creates a new user and returns user data", async () => {
+  test("Registers a new user and returns token", async () => {
     const response = await request(app).post(`/users`).send({
       username: "test1",
       password: "abc123",
@@ -44,12 +44,9 @@ describe("POST users/", function () {
       email: "a@b.com",
     });
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({
-      username: "test1",
-      first_name: "jo",
-      last_name: "schmo",
-      email: "a@b.com",
-    });
+    expect(response.body).toEqual(
+      expect.objectContaining({ _token: expect.any(String) })
+    );
 
     const resp = await request(app).get(`/users`);
     expect(resp.body.users.length).toBe(4);
@@ -73,12 +70,60 @@ describe("POST users/", function () {
   });
 });
 
+describe("POST users/login", function () {
+  test("Log in a user and returns token", async () => {
+    const response = await request(app).post(`/users/login`).send({
+      username: "user1",
+      password: "abc123",
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({ _token: expect.any(String) })
+    );
+    expect(response.body.message).toEqual("Logged in!");
+  });
+
+  test("Doesn't login without username", async () => {
+    const response = await request(app).post(`/users/login`).send({
+      password: "abc123",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toEqual("Username and password required");
+  });
+
+  test("Doesn't login without password", async () => {
+    const response = await request(app).post(`/users/login`).send({
+      username: "user1",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toEqual("Username and password required");
+  });
+
+  test("Doesn't login with nonexistent username ", async () => {
+    const response = await request(app).post(`/users/login`).send({
+      username: "notUser",
+      password: "abc123",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toEqual("Wrong password/username");
+  });
+  test("Doesn't login with bad password username ", async () => {
+    const response = await request(app).post(`/users/login`).send({
+      username: "user1",
+      password: "notPassword",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toEqual("Wrong password/username");
+  });
+});
+
 describe("GET /users/:username", function () {
   test("Returns a users' data", async () => {
     const response = await request(app).get(`/users/user1`);
     expect(response.statusCode).toBe(200);
     expect(response.body.user.username).toBe("user1");
     expect(response.body.user.password).toBeUndefined();
+    //need to compare to hash
     expect(response.body.user.first_name).toBe("Joy");
     expect(response.body.user.last_name).toBe("Lee");
     expect(response.body.user.email).toBe("joy@gmail.com");

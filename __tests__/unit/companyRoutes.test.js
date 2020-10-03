@@ -4,9 +4,33 @@ const request = require("supertest");
 
 const app = require("../../app");
 const db = require("../../db");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { SECRET_KEY } = require("../../config");
+
+const BCRYPT_WORK_FACTOR = 1;
+
+let testUserToken;
+let adminUserToken;
 
 // const router = new express.Router();
 // const ExpressError = require("../helpers/expressError");
+beforeAll(async () => {
+  const hashedPassword = await bcrypt.hash("secret123", BCRYPT_WORK_FACTOR);
+  await db.query(
+    `INSERT INTO users 
+        (username, password, first_name, last_name, email,is_admin)
+        VALUES
+        ('admin', ${hashedPassword}, 'Kona', 'K', 'kona@gmail.com',true)
+        ('user', ${hashedPassword}, 'Sushi', 'S', 'sushi@gmail.com',false)`
+  );
+  const testAdmin = {username:"admin"};
+  const testUser = {username:"user"};
+  testUserToken = jwt.sign(testUser,SECRET_KEY);
+  adminUserToken= jwt.sign(testAdmin,SECRET_KEY);
+});
+
+
 
 beforeEach(async () => {
   await db.query(

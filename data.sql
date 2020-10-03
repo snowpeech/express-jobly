@@ -40,6 +40,8 @@ CREATE TABLE users
 );
 
 -- INSERT INTO users
---     (username, password, first_name, last_name, email, photo_url)
+--     (username, password, first_name, last_name, email, is_admin)
 -- VALUES
---     ('username', 'secret123', 'Sam', 'Adams', 'sam@gmail.com', 'www.photo.url');
+--     ('admin', 'secret123', 'Sam', 'Adams', 'sama@gmail.com', true),
+--     ('user', 'secret123', 'Sam', 'Adams', 'sam@gmail.com', true) 
+-- RETURNING username, password;

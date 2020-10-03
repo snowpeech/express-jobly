@@ -49,6 +49,16 @@
       "description": "An explanation about the purpose of this instance.",
       "default": "",
       "examples": ["wwww.chipo.tle"]
+    },
+    "_token": {
+      "$id": "#/properties/_token",
+      "type": "string",
+      "title": "The _token schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoib25lIiwicGFzc3dvcmQiOiIkMmIkMTIkaGZENDVnT25HaFdLRFF6d3hYRzM4ZVR6VlQ2cnc3YjVjdHM2UTdGcFp0bzVuNlRoRklLMGUiLCJmaXJzdF9uYW1lIjoid29vZiIsImxhc3RfbmFtZSI6ImJvbyIsImVtYWlsIjoib25lQGdtYWlsLmNvbSIsInBob3RvX3VybCI6bnVsbH0sImlhdCI6MTYwMTY3MjEzMn0.TwMC11QsrEjLgi0vOOd1SmYCqiFhjF1-59kFp7ctcJs"
+      ]
     }
   },
   "additionalProperties": false

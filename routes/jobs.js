@@ -6,12 +6,15 @@ const jsonschema = require("jsonschema");
 const jobSchemaNew = require("../schemas/jobSchemaNew.json");
 const jobSchemaUpdate = require("../schemas/jobSchemaUpdate.json");
 
-const db = require("../db");
-const sqlForPartialUpdate = require("../helpers/partialUpdate");
-const sqlForPost = require("../helpers/sqlForPost");
+const {
+  ensureLoggedIn,
+  ensureIsAdmin,
+  ensureCorrectUser,
+} = require("../middleware/auth");
+
 const Job = require("../models/job");
 
-router.get("/", async (req, res, next) => {
+router.get("/", ensureLoggedIn, async (req, res, next) => {
   try {
     // This route should list all the titles and company handles for all jobs, ordered by the most recently posted jobs. It should also allow for the following query string parameters
     // return JSON of {jobs: [job, ...]}
@@ -28,7 +31,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", ensureIsAdmin, async (req, res, next) => {
   try {
     // This route creates a new job and returns a new job.
     // It should return JSON of {job: jobData}
@@ -47,7 +50,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", ensureLoggedIn, async (req, res, next) => {
   try {
     // This route should show information about a specific job including a key of company which is an object that contains all of the information about the company associated with it.
     // It should return JSON of {job: jobData}
@@ -62,7 +65,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", ensureIsAdmin, async (req, res, next) => {
   // This route updates a job by its ID and returns an the newly updated job.
   // It should return JSON of {job: jobData}
   try {
@@ -85,7 +88,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", ensureIsAdmin, async (req, res, next) => {
   try {
     // delete job and return message
     // return JSON of { message: "Job deleted" }

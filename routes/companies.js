@@ -6,11 +6,16 @@ const jsonschema = require("jsonschema");
 const companySchemaNew = require("../schemas/companySchemaNew.json");
 const companySchemaUpdate = require("../schemas/companySchemaUpdate.json");
 
+const {
+  ensureLoggedIn,
+  ensureCorrectUser,
+  ensureIsAdmin,
+} = require("../middleware/auth");
 const Company = require("../models/company");
 
 // const Book = require("../models/book");
 
-router.get("/", async (req, res, next) => {
+router.get("/", ensureLoggedIn, async (req, res, next) => {
   // This should return the handle and name for all of the company objects. It should also allow for the following query string parameters
   try {
     const { search, min_employees, max_employees } = req.query;
@@ -23,7 +28,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", ensureIsAdmin, async (req, res, next) => {
   //create a new company & return newly created company
   try {
     const validationResult = jsonschema.validate(req.body, companySchemaNew);
@@ -48,7 +53,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.get("/:handle", async (req, res, next) => {
+router.get("/:handle", ensureLoggedIn, async (req, res, next) => {
   //return a single company by its id
   try {
     const { handle } = req.params;
@@ -60,7 +65,7 @@ router.get("/:handle", async (req, res, next) => {
   }
 });
 
-router.patch("/:handle", async (req, res, next) => {
+router.patch("/:handle", ensureIsAdmin, async (req, res, next) => {
   //update an existing company and return updated company
   // for every value passed in, create an array.
   try {
@@ -77,7 +82,7 @@ router.patch("/:handle", async (req, res, next) => {
   }
 });
 
-router.delete("/:handle", async (req, res, next) => {
+router.delete("/:handle", ensureIsAdmin, async (req, res, next) => {
   //delete an existing company and return a message
   try {
     let result = await Company.delete(req.params.handle);
