@@ -1,20 +1,44 @@
 process.env.NODE_ENV = "test";
 
 const request = require("supertest");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const app = require("../../app");
 const db = require("../../db");
+const { SECRET_KEY } = require("../../config");
+const BCRYPT_WORK_FACTOR = 1;
+
+let testUserToken;
+let adminUserToken;
 
 beforeEach(async () => {
+  // await db.query(
+  //   `INSERT INTO users
+  //       (username, password, first_name, last_name, email, is_admin)
+  //       VALUES
+  //       ('admin1', 'secret123', 'Joy', 'Lee', 'joy@gmail.com', true),
+  //       ('user', 'secret123', 'Sara', 'Lee', 'sara@gmail.com', false),
+  //       ('user2', 'secret123', 'Hope', 'Lee', 'hope@gmail.com',false)
+  //       `
+  // );
+
+  const hashedPassword = await bcrypt.hash("secret123", BCRYPT_WORK_FACTOR);
+
   await db.query(
     `INSERT INTO users 
-        (username, password, first_name, last_name, email)
+        (username, password, first_name, last_name, email,is_admin)
         VALUES
-        ('user1', 'secret123', 'Joy', 'Lee', 'joy@gmail.com'),
-        ('user2', 'secret123', 'Sara', 'Lee', 'sara@gmail.com'),
-        ('user3', 'secret123', 'Hope', 'Lee', 'hope@gmail.com')
-        `
+        ('admin', '${hashedPassword}', 'Kona', 'K', 'kona@gmail.com',true),
+        ('user', '${hashedPassword}', 'Sushi', 'S', 'sushi@gmail.com',false),
+        ('user2', '${hashedPassword}', 'Hope', 'Lee', 'hope@gmail.com',false)
+        RETURNING username`
   );
+  const testAdmin = { username: "admin", is_admin: true };
+  const testUser = { username: "user", is_admin: false };
+
+  testUserToken = jwt.sign(testUser, SECRET_KEY);
+  adminUserToken = jwt.sign(testAdmin, SECRET_KEY);
 });
 
 afterEach(async () => {
@@ -25,9 +49,27 @@ afterAll(async () => {
   await db.end();
 });
 
+// describe("isthis working", () => {
+//   test("1=1", () => {
+//     console.log("testUserToken", testUserToken);
+//     console.log("adminUserToken", adminUserToken);
+//     expect(1).toBe(1);
+//   });
+// });
+
 describe("GET users/", function () {
-  test("Returns all user data", async () => {
+  test("Returns all user data for logged in user", async () => {
+    const response = await request(app)
+      .get(`/users`)
+      .send({ _token: testUserToken });
+
+    expect(response.statusCode).toBe(200);
+
+    expect(response.body.users.length).toBe(3);
+  });
+  test("Returns user data for any  user", async () => {
     const response = await request(app).get(`/users`);
+
     expect(response.statusCode).toBe(200);
 
     expect(response.body.users.length).toBe(3);
@@ -73,8 +115,8 @@ describe("POST users/", function () {
 describe("POST users/login", function () {
   test("Log in a user and returns token", async () => {
     const response = await request(app).post(`/users/login`).send({
-      username: "user1",
-      password: "abc123",
+      username: "user",
+      password: "secret123",
     });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual(
@@ -119,14 +161,14 @@ describe("POST users/login", function () {
 
 describe("GET /users/:username", function () {
   test("Returns a users' data", async () => {
-    const response = await request(app).get(`/users/user1`);
+    const response = await request(app).get(`/users/user`);
     expect(response.statusCode).toBe(200);
-    expect(response.body.user.username).toBe("user1");
+    expect(response.body.user.username).toBe("user");
     expect(response.body.user.password).toBeUndefined();
     //need to compare to hash
-    expect(response.body.user.first_name).toBe("Joy");
-    expect(response.body.user.last_name).toBe("Lee");
-    expect(response.body.user.email).toBe("joy@gmail.com");
+    expect(response.body.user.first_name).toBe("Sushi");
+    expect(response.body.user.last_name).toBe("S");
+    expect(response.body.user.email).toBe("sushi@gmail.com");
     expect(response.body.user.photo_url).toBeNull();
   });
 
@@ -139,35 +181,59 @@ describe("GET /users/:username", function () {
 
 describe("PATCH /users/:username", function () {
   test("Updates a user", async () => {
-    const response = await request(app).patch(`/users/user1`).send({
+    const response = await request(app).patch(`/users/user`).send({
       first_name: "tinkerbell",
-      password: "fairydust",
+      _token: testUserToken,
     });
+
     expect(response.statusCode).toBe(200);
 
     expect(response.body.user.first_name).toBe("tinkerbell");
-    expect(response.body.user.password).toBe("fairydust");
+  });
+
+  test("Doesn't update user with wrong token", async () => {
+    const response = await request(app).patch(`/users/user`).send({
+      first_name: "tinkerbell",
+      _token: adminUserToken,
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
   });
 
   test("Returns an error when trying to update a username", async () => {
-    const response = await request(app).patch(`/users/user1`).send({
+    const response = await request(app).patch(`/users/user`).send({
       username: "fairygirl",
       first_name: "tinkerbell",
-      password: "fairydust",
+      _token: testUserToken,
     });
     expect(response.statusCode).toBe(400);
     expect(response.body.message[0]).toBe(
       'instance additionalProperty "username" exists in instance when not allowed'
     );
-    const resp = await request(app).get(`/users/user1`);
-    expect(resp.body.user.username).toBe("user1");
+    const resp = await request(app).get(`/users/user`);
+    expect(resp.body.user.username).toBe("user");
+  });
+
+  test("Returns an error when updating email to duplicate", async () => {
+    const response = await request(app).patch(`/users/user`).send({
+      email: "kona@gmail.com",
+      _token: testUserToken,
+    });
+    expect(response.statusCode).toBe(500);
+    expect(response.body.message).toBe(
+      'duplicate key value violates unique constraint "users_email_key"'
+    );
+    const resp = await request(app).get(`/users/user`);
+    expect(resp.body.user.email).toBe("sushi@gmail.com");
   });
 });
 
 describe("DELETE /users/:username", function () {
   test("Deletes a user", async () => {
-    const res = await request(app).get("/users");
-    const response = await request(app).delete(`/users/user1`);
+    // const res = await request(app).get("/users");
+    const response = await request(app).delete(`/users/user`).send({
+      _token: testUserToken,
+    });
 
     expect(response.statusCode).toBe(200);
     expect(response.body.message).toBe("User deleted");
@@ -176,10 +242,12 @@ describe("DELETE /users/:username", function () {
     expect(resp.body.users.length).toBe(2);
   });
 
-  test("Does not delete a user at wrong username", async () => {
-    const response = await request(app).delete(`/users/notUser`);
-    expect(response.statusCode).toBe(404);
-    expect(response.body.message).toBe("notUser not found");
+  test("Does not delete a user with wrong username", async () => {
+    const response = await request(app).delete(`/users/notUser`).send({
+      _token: testUserToken,
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
 
     const resp = await request(app).get(`/users`);
     expect(resp.body.users.length).toBe(3);

@@ -24,13 +24,11 @@ beforeAll(async () => {
         ('admin', ${hashedPassword}, 'Kona', 'K', 'kona@gmail.com',true)
         ('user', ${hashedPassword}, 'Sushi', 'S', 'sushi@gmail.com',false)`
   );
-  const testAdmin = {username:"admin"};
-  const testUser = {username:"user"};
-  testUserToken = jwt.sign(testUser,SECRET_KEY);
-  adminUserToken= jwt.sign(testAdmin,SECRET_KEY);
+  const testAdmin = { username: "admin", is_admin: true };
+  const testUser = { username: "user", is_admin: false };
+  testUserToken = jwt.sign(testUser, SECRET_KEY);
+  adminUserToken = jwt.sign(testAdmin, SECRET_KEY);
 });
-
-
 
 beforeEach(async () => {
   await db.query(
