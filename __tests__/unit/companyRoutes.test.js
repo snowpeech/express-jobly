@@ -21,13 +21,13 @@ beforeAll(async () => {
     `INSERT INTO users 
         (username, password, first_name, last_name, email,is_admin)
         VALUES
-        ('admin', ${hashedPassword}, 'Kona', 'K', 'kona@gmail.com',true)
-        ('user', ${hashedPassword}, 'Sushi', 'S', 'sushi@gmail.com',false)`
+        ('admin', '${hashedPassword}', 'Kona', 'K', 'kona@gmail.com',true),
+        ('user', '${hashedPassword}', 'Sushi', 'S', 'sushi@gmail.com',false)`
   );
   const testAdmin = { username: "admin", is_admin: true };
   const testUser = { username: "user", is_admin: false };
-  testUserToken = jwt.sign(testUser, SECRET_KEY);
-  adminUserToken = jwt.sign(testAdmin, SECRET_KEY);
+  userToken = jwt.sign(testUser, SECRET_KEY);
+  adminToken = jwt.sign(testAdmin, SECRET_KEY);
 });
 
 beforeEach(async () => {
@@ -54,34 +54,45 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+  await db.query(`DELETE FROM users`);
   await db.end();
 });
 
 describe("GET companies/", function () {
-  test("Returns all companies data", async function () {
-    const response = await request(app).get(`/companies`);
+  test("Returns all companies data with token", async function () {
+    const response = await request(app)
+      .get(`/companies`)
+      .send({ _token: userToken });
     expect(response.statusCode).toBe(200);
     expect(response.body.companies.length).toBe(4);
   });
 
+  test("Returns no companies without token", async function () {
+    const response = await request(app).get(`/companies`);
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
+  });
+
   test("Returns company data for search", async () => {
-    const response = await request(app).get(`/companies?search=co`);
+    const response = await request(app)
+      .get(`/companies?search=co`)
+      .send({ _token: userToken });
     expect(response.statusCode).toEqual(200);
     expect(response.body.companies.length).toBe(3);
   });
 
   test("Returns companies matching search, number of employees constraints", async () => {
-    const response = await request(app).get(
-      `/companies?search=co&min_employees=10&max_employees=500`
-    );
+    const response = await request(app)
+      .get(`/companies?search=co&min_employees=10&max_employees=500`)
+      .send({ _token: userToken });
     expect(response.statusCode).toEqual(200);
     expect(response.body.companies.length).toBe(2);
   });
 
   test("Returns error when min companies > max companies", async () => {
-    const response = await request(app).get(
-      `/companies?search=co&min_employees=1000&max_employees=500`
-    );
+    const response = await request(app)
+      .get(`/companies?search=co&min_employees=1000&max_employees=500`)
+      .send({ _token: userToken });
     expect(response.statusCode).toBe(400);
     expect(response.body.message).toBe(
       "min employees should not be greater than max employees"
@@ -91,7 +102,9 @@ describe("GET companies/", function () {
 
 describe("GET /companies/:handle", function () {
   test("Returns company data at handle", async () => {
-    const response = await request(app).get(`/companies/test`);
+    const response = await request(app)
+      .get(`/companies/test`)
+      .send({ _token: userToken });
     expect(response.statusCode).toBe(200);
     expect(response.body.company.handle).toBe("test");
     expect(response.body.company.name).toBe("test name");
@@ -101,8 +114,24 @@ describe("GET /companies/:handle", function () {
     expect(response.body.company.jobs.length).toBe(2);
   });
 
+  test("Returns error without token", async () => {
+    const response = await request(app).get(`/companies/test`);
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
+  });
+
+  test("Returns error without bad token", async () => {
+    const response = await request(app)
+      .get(`/companies/test`)
+      .send({ _token: "fakeToken" });
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
+  });
+
   test("Returns error message for nonexistent company handle", async () => {
-    const response = await request(app).get(`/companies/notHandle`);
+    const response = await request(app)
+      .get(`/companies/notHandle`)
+      .send({ _token: userToken });
     expect(response.body).toEqual({
       message: "No company with handle notHandle was found",
       status: 400,
@@ -118,6 +147,7 @@ describe("POST /companies", function () {
       num_employees: 1200,
       description: "favorite of college students",
       logo_url: "https://www.tacodeli.com",
+      _token: adminToken,
     });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
@@ -129,9 +159,30 @@ describe("POST /companies", function () {
         logo_url: "https://www.tacodeli.com",
       },
     });
-    const resp = await request(app).get(`/companies`);
+    const resp = await request(app)
+      .get(`/companies`)
+      .send({ _token: userToken });
 
     expect(resp.body.companies.length).toBe(5);
+  });
+
+  test("Doesn't create a company with user token", async () => {
+    const response = await request(app).post(`/companies`).send({
+      handle: "tbell",
+      name: "Taco Bell",
+      num_employees: 1200,
+      description: "favorite of college students",
+      logo_url: "https://www.tacodeli.com",
+      _token: userToken,
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
+
+    const resp = await request(app)
+      .get(`/companies`)
+      .send({ _token: userToken });
+
+    expect(resp.body.companies.length).toBe(4);
   });
 
   test("Returns error message for company missing required info", async () => {
@@ -140,38 +191,57 @@ describe("POST /companies", function () {
       num_employees: 1200,
       description: "favorite of college students",
       logo_url: "https://www.tacodeli.com",
+      _token: adminToken,
     });
     expect(response.statusCode).toBe(400);
     expect(response.body.message[0]).toBe(
       'instance requires property "handle"'
     );
 
-    const resp = await request(app).get(`/companies`);
+    const resp = await request(app)
+      .get(`/companies`)
+      .send({ _token: userToken });
     expect(resp.body.companies.length).toBe(4);
   });
 });
 
 describe("PATCH /companies/:handle", function () {
-  test("Updates a company", async () => {
+  test("Updates a company with admin token", async () => {
     const response = await request(app).patch(`/companies/test`).send({
       name: "Taco Bell",
       num_employees: 1200,
       description: "favorite of college students",
       logo_url: "https://www.tacobell.com",
+      _token: adminToken,
     });
+    console.log(adminToken);
+    console.log("UPDATES WITHADMIN TOKEN BODY", response.body);
     expect(response.statusCode).toBe(200);
-    expect(response.body.company).toEqual([
-      {
-        handle: "test",
-        name: "Taco Bell",
-        num_employees: 1200,
-        description: "favorite of college students",
-        logo_url: "https://www.tacobell.com",
-      },
-    ]);
-    const resp = await request(app).get(`/companies`);
+    expect(response.body.company.handle).toEqual("test");
+    expect(response.body.company.name).toEqual("Taco Bell");
+    expect(response.body.company.num_employees).toEqual(1200);
+    expect(response.body.company.description).toEqual(
+      "favorite of college students"
+    );
+    expect(response.body.company.logo_url).toEqual("https://www.tacobell.com");
+
+    const resp = await request(app).get(`/companies`).send({
+      _token: adminToken,
+    });
 
     expect(resp.body.companies.length).toBe(4);
+  });
+
+  test("Doesn't update company with non-auth token", async () => {
+    const response = await request(app).patch(`/companies/test`).send({
+      name: "Taco Bell",
+      num_employees: 1200,
+      description: "favorite of college students",
+      logo_url: "https://www.tacodeli.com",
+      _token: userToken,
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
   });
 
   test("Returns error message for duplicate name", async () => {
@@ -180,6 +250,7 @@ describe("PATCH /companies/:handle", function () {
       num_employees: 1200,
       description: "favorite of college students",
       logo_url: "https://www.tacodeli.com",
+      _token: adminToken,
     });
     expect(response.statusCode).toBe(500);
     expect(response.body.message).toBe(
@@ -191,6 +262,7 @@ describe("PATCH /companies/:handle", function () {
     const response = await request(app).patch(`/companies/test`).send({
       handle: "test",
       name: "Taco Bell",
+      _token: adminToken,
     });
     expect(response.statusCode).toBe(400);
     expect(response.body.message[0]).toBe(
@@ -201,19 +273,36 @@ describe("PATCH /companies/:handle", function () {
 
 describe("DELETE /companies/:handle", function () {
   test("Deletes a company", async () => {
-    const response = await request(app).delete(`/companies/test`);
+    const response = await request(app).delete(`/companies/test`).send({
+      _token: adminToken,
+    });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "Company deleted" });
+    const resp = await request(app).get(`/companies`).send({
+      _token: adminToken,
+    });
 
-    const resp = await request(app).get(`/companies`);
     expect(resp.body.companies.length).toBe(3);
   });
 
+  test("Does not delete a company with user token", async () => {
+    const response = await request(app).delete(`/companies/test`).send({
+      _token: userToken,
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
+
+    const resp = await request(app).get(`/companies`).send({
+      _token: adminToken,
+    });
+  });
+
   test("Returns error message for company missing required info", async () => {
-    const response = await request(app).delete(`/companies/notHandle`);
+    const response = await request(app).delete(`/companies/notHandle`).send({
+      _token: adminToken,
+    });
     expect(response.statusCode).toBe(500);
     expect(response.body.message).toBe("handle is not defined");
   });
 });
-
-// patch & delete :/

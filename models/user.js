@@ -34,10 +34,11 @@ class User {
     );
     let user = result.rows[0];
     console.log("FROM USER MODEL:::", user);
-
     if (user && (await bcrypt.compare(password, user.password))) {
       let { username, is_admin } = user;
-      user = { username, is_admin }; //removed password from user object
+      user = { username, is_admin };
+
+      // user = { username, is_admin }; //removed password from user object
       console.log("FROM USER MODEL LOGIN NO PASSWORD:::", user);
       let token = jwt.sign({ user }, SECRET_KEY); //remove password from here after login
 

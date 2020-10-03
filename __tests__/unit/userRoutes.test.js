@@ -13,16 +13,6 @@ let testUserToken;
 let adminUserToken;
 
 beforeEach(async () => {
-  // await db.query(
-  //   `INSERT INTO users
-  //       (username, password, first_name, last_name, email, is_admin)
-  //       VALUES
-  //       ('admin1', 'secret123', 'Joy', 'Lee', 'joy@gmail.com', true),
-  //       ('user', 'secret123', 'Sara', 'Lee', 'sara@gmail.com', false),
-  //       ('user2', 'secret123', 'Hope', 'Lee', 'hope@gmail.com',false)
-  //       `
-  // );
-
   const hashedPassword = await bcrypt.hash("secret123", BCRYPT_WORK_FACTOR);
 
   await db.query(

@@ -80,8 +80,8 @@ class Company {
       id
     );
 
-    const result = await db.query(query, values);
-    return result.rows;
+    const result = await db.query(`${query} RETURNING *`, values);
+    return result.rows[0];
   }
 
   static async delete(handle) {

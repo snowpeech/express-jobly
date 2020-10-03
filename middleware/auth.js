@@ -7,13 +7,9 @@ const { SECRET_KEY } = require("../config");
 
 function authenticateJWT(req, res, next) {
   try {
-    console.log("AUTHENTICATE JWT");
     const tokenFromBody = req.body._token;
-    console.log("AUTHENTICATE JWT body", req.body);
     const payload = jwt.verify(tokenFromBody, SECRET_KEY);
-    console.log("AUG", payload);
     req.user = payload; // store user from token in req.user
-    console.log("AUTHENTICATE JWT REQ.USER", req.user);
     return next();
   } catch (err) {
     return next();
@@ -34,6 +30,8 @@ function ensureLoggedIn(req, res, next) {
 
 function ensureIsAdmin(req, res, next) {
   if (!req.user || !req.user.is_admin) {
+    console.log("ENSURE IS ADMIN mw::::::", req.user);
+    // console.log("ENSURE IS ADMIN mw::::::", req.user.user);
     return next({ status: 401, message: "Unauthorized" });
   } else {
     return next();
@@ -43,19 +41,13 @@ function ensureIsAdmin(req, res, next) {
 /** Middleware: Requires correct username. */
 
 function ensureCorrectUser(req, res, next) {
-  console.log("ENSURE CORRECT USER");
-  console.log(":::::::::", req.params.username); //looks good
-  console.log(":::::::::req user", req.user);
   try {
-    console.log("USER USERNAME:::::::::", req.user.username);
-    console.log("PARAMS USERNAME:::::::::", req.params.username);
     if (req.user.username === req.params.username) {
       return next();
     } else {
       return next({ status: 401, message: "Unauthorized" });
     }
   } catch (err) {
-    // errors would happen here if we made a request and req.user is undefined
     return next({ status: 401, message: "Unauthorized" });
   }
 }
