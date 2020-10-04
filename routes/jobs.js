@@ -9,7 +9,6 @@ const jobSchemaUpdate = require("../schemas/jobSchemaUpdate.json");
 const {
   ensureLoggedIn,
   ensureIsAdmin,
-  ensureCorrectUser,
 } = require("../middleware/auth");
 
 const Job = require("../models/job");

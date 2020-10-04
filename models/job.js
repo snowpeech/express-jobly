@@ -1,7 +1,5 @@
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
 const sqlForPost = require("../helpers/sqlForPost");
-const ExpressError = require("../helpers/expressError");
-
 const db = require("../db");
 
 class Job {
@@ -62,7 +60,7 @@ class Job {
   static async update(obj, id) {
     let { query, values } = sqlForPartialUpdate("jobs", obj, "id", id);
 
-    const result = await db.query(query, values);
+    const result = await db.query(`${query} RETURNING *`, values);
 
     return result.rows[0];
   }
