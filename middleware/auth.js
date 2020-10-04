@@ -9,8 +9,7 @@ function authenticateJWT(req, res, next) {
   try {
     const tokenFromBody = req.body._token;
     const payload = jwt.verify(tokenFromBody, SECRET_KEY);
-    req.user = payload; // store user from token in req.user
-    console.log("auth jwt!!!!!!!!!!!!!!!!!", req.user);
+    req.user = payload;
     return next();
   } catch (err) {
     return next();
