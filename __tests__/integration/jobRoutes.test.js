@@ -97,7 +97,6 @@ describe("GET jobs/", function () {
       .get(`/jobs?min_equity=0.3`)
       .send({ _token: userToken });
 
-    console.log("BODY", response.body);
     expect(response.statusCode).toEqual(200);
     expect(response.body.jobs.length).toBe(2);
     expect(Date.parse(response.body.jobs[0].date_posted)).toBeGreaterThan(

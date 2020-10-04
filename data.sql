@@ -7,9 +7,6 @@ CREATE TABLE companies
     logo_url TEXT
 );
 
--- INSERT INTO companies (handle, name, num_employees) VALUES ('Coco', 'Co and Co', 3);
-
-
 CREATE TABLE jobs
 (
     id SERIAL PRIMARY KEY ,
@@ -21,13 +18,6 @@ CREATE TABLE jobs
 ()
 );
 
-
--- INSERT INTO jobs
---     (title, salary, equity, company_handle, date_posted)
--- VALUES
---     ('rough', 120000, 0.25, 'Coco', '2020-05-11');
-
-
 CREATE TABLE users
 (
     username TEXT PRIMARY KEY,
@@ -38,10 +28,3 @@ CREATE TABLE users
     photo_url TEXT,
     is_admin BOOLEAN NOT NULL DEFAULT false
 );
-
--- INSERT INTO users
---     (username, password, first_name, last_name, email, is_admin)
--- VALUES
---     ('admin', 'secret123', 'Sam', 'Adams', 'sama@gmail.com', true),
---     ('user', 'secret123', 'Sam', 'Adams', 'sam@gmail.com', true) 
--- RETURNING username, password;

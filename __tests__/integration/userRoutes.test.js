@@ -38,14 +38,6 @@ afterAll(async () => {
   await db.end();
 });
 
-// describe("isthis working", () => {
-//   test("1=1", () => {
-//     console.log("testUserToken", testUserToken);
-//     console.log("adminUserToken", adminUserToken);
-//     expect(1).toBe(1);
-//   });
-// });
-
 describe("GET users/", function () {
   test("Returns all user data for logged in user", async () => {
     const response = await request(app)

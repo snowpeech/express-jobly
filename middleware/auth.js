@@ -31,8 +31,6 @@ function ensureLoggedIn(req, res, next) {
 
 function ensureIsAdmin(req, res, next) {
   if (!req.user || !req.user.is_admin) {
-    console.log("ENSURE IS ADMIN mw::::::", req.user);
-    // console.log("ENSURE IS ADMIN mw::::::", Object.keys(req));
     return next({ status: 401, message: "Unauthorized" });
   } else {
     return next();

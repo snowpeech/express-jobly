@@ -22,23 +22,6 @@ app.use("/users", userRoutes);
 
 /** 404 handler */
 
-// app.post("/login", async function (req, res, next) {
-//   // This should authenticate a user and return a JSON Web Token which contains a payload with the username and is_admin values.
-//   // This should return JSON: {token: token}
-//   try {
-//     let { username, password } = req.body;
-//     if (await User.authenticate(username, password)) {
-//       let token = jwt.sign({ username }, SECRET_KEY);
-
-//       return res.json({ token });
-//     } else {
-//       throw new ExpressError("Invalid username/password", 400);
-//     }
-//   } catch (err) {
-//     return next(err);
-//   }
-// });
-
 app.use(function (req, res, next) {
   const err = new ExpressError("Not Found", 404);
 

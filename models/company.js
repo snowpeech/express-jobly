@@ -18,7 +18,7 @@ class Company {
     }
 
     if (search) {
-      getCompanies += ` WHERE (name LIKE $${counter} OR handle LIKE $${counter}) `;
+      getCompanies += ` WHERE (name iLIKE $${counter} OR handle iLIKE $${counter}) `;
       values.push(`%${search}%`);
       counter++;
     }
