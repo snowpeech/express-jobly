@@ -21,7 +21,7 @@ class User {
 
     const { username, is_admin } = result.rows[0];
     let user = { username, is_admin };
-    let token = jwt.sign({ user }, SECRET_KEY);
+    let token = jwt.sign(user, SECRET_KEY);
 
     // console.log(result.rows[0]);
     return token;
@@ -40,7 +40,7 @@ class User {
 
       // user = { username, is_admin }; //removed password from user object
       console.log("FROM USER MODEL LOGIN NO PASSWORD:::", user);
-      let token = jwt.sign({ user }, SECRET_KEY); //remove password from here after login
+      let token = jwt.sign(user, SECRET_KEY); //remove password from here after login
 
       return token;
     } else {

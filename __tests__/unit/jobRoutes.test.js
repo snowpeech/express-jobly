@@ -1,13 +1,32 @@
 process.env.NODE_ENV = "test";
 
 const request = require("supertest");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const app = require("../../app");
 const db = require("../../db");
+const { SECRET_KEY } = require("../../config");
+const BCRYPT_WORK_FACTOR = 1;
 
-let jobId;
+let jobId, userToken, adminToken;
 
 beforeEach(async () => {
+  const hashedPassword = await bcrypt.hash("secret123", BCRYPT_WORK_FACTOR);
+
+  await db.query(
+    `INSERT INTO users 
+        (username, password, first_name, last_name, email,is_admin)
+        VALUES
+        ('admin', '${hashedPassword}', 'Kona', 'K', 'kona@gmail.com',true),
+        ('user', '${hashedPassword}', 'Sushi', 'S', 'sushi@gmail.com',false) `
+  );
+  const testAdmin = { username: "admin", is_admin: true };
+  const testUser = { username: "user", is_admin: false };
+
+  testUserToken = jwt.sign(testUser, SECRET_KEY);
+  adminUserToken = jwt.sign(testAdmin, SECRET_KEY);
+
   await db.query(
     `INSERT INTO companies (handle, name)
     VALUES
@@ -22,13 +41,14 @@ beforeEach(async () => {
       ('baker', 65, 0.5, 'big', '2020-09-22') 
       RETURNING id`
   );
-  console.log("BEFORE EACH", result.rows);
+
   jobId = result.rows[0].id;
 });
 
 afterEach(async () => {
   await db.query(` DELETE FROM jobs`);
   await db.query(`DELETE FROM companies`);
+  await db.query(`DELETE FROM users`);
 });
 
 afterAll(async () => {
@@ -130,54 +150,60 @@ afterAll(async () => {
 //   });
 // });
 
-describe("PATCH /jobs/:id", function () {
-  test("Updates a job", async () => {
-    const response = await request(app).patch(`/jobs/${jobId}`).send({
-      title: "tinkerbell",
-      salary: 1200,
-    });
+// describe("PATCH /jobs/:id", function () {
+//   test("Updates a job", async () => {
+//     const response = await request(app).patch(`/jobs/${jobId}`).send({
+//       title: "tinkerbell",
+//       salary: 1200,
+//       _token: adminToken,
+//     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body.job.salary).toEqual(1200);
-    expect(response.body.job.title).toEqual("tinkerbell");
-    const resp = await request(app).get(`/jobs`);
+//     expect(response.statusCode).toBe(200);
+//     expect(response.body.job.salary).toEqual(1200);
+//     expect(response.body.job.title).toEqual("tinkerbell");
+//     const resp = await request(app).get(`/jobs`).send({ _token: userToken });
 
-    expect(resp.body.jobs.length).toBe(3);
-  });
+//     expect(resp.body.jobs.length).toBe(3);
+//   });
 
-  test("Returns message if job id not found", async () => {
-    const response = await request(app).patch(`/jobs/0`).send({
-      title: "text",
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toBe("No job with id 0 was found");
-  });
+//   test("Returns message if job id not found", async () => {
+//     const response = await request(app).patch(`/jobs/0`).send({
+//       title: "text",
+//       _token: adminToken,
+//     });
+//     expect(response.statusCode).toBe(400);
+//     expect(response.body.message).toBe("No job with id 0 was found");
+//   });
 
-  test("Returns error message for passing in unacceptable update", async () => {
-    const response = await request(app).patch(`/jobs/${jobId}`).send({
-      salary: "aaa",
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message[0]).toBe(
-      "instance.salary is not of a type(s) integer"
-    );
-  });
+//   test("Returns error message for passing in unacceptable update", async () => {
+//     const response = await request(app).patch(`/jobs/${jobId}`).send({
+//       salary: "aaa",
+//       _token: adminToken,
+//     });
+//     expect(response.statusCode).toBe(400);
+//     expect(response.body.message[0]).toBe(
+//       "instance.salary is not of a type(s) integer"
+//     );
+//   });
 
-  test("Returns error message for submitting id in body", async () => {
-    const response = await request(app).patch(`/jobs/${jobId}`).send({
-      id: 23,
-      title: "text",
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message[0]).toBe(
-      'instance additionalProperty "id" exists in instance when not allowed'
-    );
-  });
-});
+//   test("Returns error message for submitting id in body", async () => {
+//     const response = await request(app).patch(`/jobs/${jobId}`).send({
+//       id: 23,
+//       title: "text",
+//       _token: adminToken,
+//     });
+//     expect(response.statusCode).toBe(400);
+//     expect(response.body.message[0]).toBe(
+//       'instance additionalProperty "id" exists in instance when not allowed'
+//     );
+//   });
+// });
 
 describe("DELETE /jobs/:id", function () {
   test("Deletes a job", async () => {
-    const response = await request(app).delete(`/jobs/${jobId}`);
+    const response = await request(app)
+      .delete(`/jobs/${jobId}`)
+      .send({ _token: adminToken });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "Job deleted" });
 
@@ -186,7 +212,9 @@ describe("DELETE /jobs/:id", function () {
   });
 
   test("Returns error message for company missing required info", async () => {
-    const response = await request(app).delete(`/jobs/1`);
+    const response = await request(app)
+      .delete(`/jobs/1`)
+      .send({ _token: adminToken });
     expect(response.statusCode).toBe(400);
     expect(response.body.message).toBe(`No job with id 1 was found`);
   });

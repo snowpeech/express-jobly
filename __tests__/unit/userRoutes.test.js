@@ -21,8 +21,7 @@ beforeEach(async () => {
         VALUES
         ('admin', '${hashedPassword}', 'Kona', 'K', 'kona@gmail.com',true),
         ('user', '${hashedPassword}', 'Sushi', 'S', 'sushi@gmail.com',false),
-        ('user2', '${hashedPassword}', 'Hope', 'Lee', 'hope@gmail.com',false)
-        RETURNING username`
+        ('user2', '${hashedPassword}', 'Hope', 'Lee', 'hope@gmail.com',false)`
   );
   const testAdmin = { username: "admin", is_admin: true };
   const testUser = { username: "user", is_admin: false };

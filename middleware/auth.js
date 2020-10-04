@@ -10,6 +10,7 @@ function authenticateJWT(req, res, next) {
     const tokenFromBody = req.body._token;
     const payload = jwt.verify(tokenFromBody, SECRET_KEY);
     req.user = payload; // store user from token in req.user
+    console.log("auth jwt!!!!!!!!!!!!!!!!!", req.user);
     return next();
   } catch (err) {
     return next();
@@ -31,7 +32,7 @@ function ensureLoggedIn(req, res, next) {
 function ensureIsAdmin(req, res, next) {
   if (!req.user || !req.user.is_admin) {
     console.log("ENSURE IS ADMIN mw::::::", req.user);
-    // console.log("ENSURE IS ADMIN mw::::::", req.user.user);
+    // console.log("ENSURE IS ADMIN mw::::::", Object.keys(req));
     return next({ status: 401, message: "Unauthorized" });
   } else {
     return next();

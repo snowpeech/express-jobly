@@ -5,6 +5,12 @@ function sqlForPost(obj, table) {
   let values = [];
   let idxArr = [];
 
+  for (let key in obj) {
+    if (key.startsWith("_")) {
+      delete obj[key];
+    }
+  }
+
   let idx = 1;
   for (let field in obj) {
     fields.push(field);
